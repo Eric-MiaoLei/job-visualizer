@@ -1,0 +1,23 @@
+{
+  "name": "job-visualizer",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "node src/server.js",
+    "start": "node src/server.js",
+    "seed": "node src/scripts/seedDemoData.js",
+    "sync:latest": "node src/scripts/syncLatestSkillOutput.js",
+    "crawl:all": "node src/scripts/crawlAllSources.js",
+    "docker:prepare": "powershell -NoProfile -ExecutionPolicy Bypass -File ./Sync-DockerSkillOutputs.ps1",
+    "docker:up": "npm run docker:prepare && docker compose up --build -d",
+    "docker:down": "docker compose down",
+    "docker:logs": "docker compose logs -f app",
+    "docker:pack": "powershell -NoProfile -ExecutionPolicy Bypass -File ./Export-Docker-Images.ps1",
+    "docker:bundle": "powershell -NoProfile -ExecutionPolicy Bypass -File ./Create-PortableDeployBundle.ps1"
+  },
+  "dependencies": {
+    "express": "^4.21.2",
+    "mongoose": "^8.13.2"
+  }
+}

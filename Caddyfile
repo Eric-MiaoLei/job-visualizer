@@ -1,0 +1,7 @@
+{
+  auto_https off
+}
+
+http://{$LOCAL_DOMAIN:jobviz.home.arpa} {
+  reverse_proxy app:3000
+}

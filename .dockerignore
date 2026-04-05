@@ -1,0 +1,10 @@
+node_modules
+tmp
+launcher
+Start-Project-Launcher.bat
+Start-Project-Launcher.exe
+Start-Project-Launcher.vbs
+.env
+.git
+.gitignore
+npm-debug.log

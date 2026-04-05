@@ -1,0 +1,73 @@
+services:
+  mongo:
+    image: mongo:7
+    container_name: job-visualizer-mongo
+    restart: unless-stopped
+    volumes:
+      - mongo-data:/data/db
+    healthcheck:
+      test: ["CMD-SHELL", "mongosh --quiet --eval \"db.adminCommand('ping').ok\" || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: job-visualizer-app
+    restart: unless-stopped
+    depends_on:
+      mongo:
+        condition: service_healthy
+    environment:
+      PORT: "3000"
+      STORE_MODE: "mongo"
+      MONGODB_URI: "mongodb://mongo:27017/jphr_jobs"
+      AUTO_SEED: "${AUTO_SEED:-true}"
+      SKILL_OUTPUT_ROOT: "/app/runtime-skills/jphr/outputs/japan-frontend-jobs"
+      DAILY_CRAWL_ENABLED: "${DAILY_CRAWL_ENABLED:-true}"
+      DAILY_CRAWL_HOUR: "${DAILY_CRAWL_HOUR:-2}"
+      DAILY_CRAWL_MINUTE: "${DAILY_CRAWL_MINUTE:-0}"
+      DAILY_CRAWL_MAX_DURATION_MS: "${DAILY_CRAWL_MAX_DURATION_MS:-55000}"
+      DAILY_CRAWL_CONCURRENCY: "${DAILY_CRAWL_CONCURRENCY:-4}"
+      DAILY_CRAWL_INTER_CHUNK_DELAY_MS: "${DAILY_CRAWL_INTER_CHUNK_DELAY_MS:-250}"
+      DAILY_VALIDATION_ENABLED: "${DAILY_VALIDATION_ENABLED:-true}"
+      DAILY_VALIDATION_HOUR: "${DAILY_VALIDATION_HOUR:-3}"
+      DAILY_VALIDATION_MINUTE: "${DAILY_VALIDATION_MINUTE:-0}"
+      DAILY_VALIDATION_MAX_DURATION_MS: "${DAILY_VALIDATION_MAX_DURATION_MS:-55000}"
+      DAILY_VALIDATION_CONCURRENCY: "${DAILY_VALIDATION_CONCURRENCY:-4}"
+      DAILY_VALIDATION_INTER_CHUNK_DELAY_MS: "${DAILY_VALIDATION_INTER_CHUNK_DELAY_MS:-250}"
+    ports:
+      - "${HOST_BIND_IP:-0.0.0.0}:${APP_HOST_PORT:-11301}:3000"
+    volumes:
+      - ./data:/app/data
+      - ./tmp:/app/tmp
+      - skills-output-data:/app/runtime-skills
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/api/dashboard').then((response) => process.exit(response.ok ? 0 : 1)).catch(() => process.exit(1))"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+
+  nginx:
+    build:
+      context: ./nginx
+      dockerfile: Dockerfile
+    container_name: job-visualizer-nginx
+    restart: unless-stopped
+    depends_on:
+      app:
+        condition: service_healthy
+    environment:
+      LOCAL_DOMAIN: "${LOCAL_DOMAIN:-jobviz.home.arpa}"
+      NGINX_UPSTREAM_HOST: "${NGINX_UPSTREAM_HOST:-app}"
+      NGINX_UPSTREAM_PORT: "${NGINX_UPSTREAM_PORT:-3000}"
+    ports:
+      - "${HOST_BIND_IP:-0.0.0.0}:${DOMAIN_HTTP_PORT:-80}:80"
+
+volumes:
+  mongo-data:
+  skills-output-data:

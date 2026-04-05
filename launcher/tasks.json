@@ -1,0 +1,19 @@
+{
+  "launcherName": "Workspace Launch Deck",
+  "description": "一键启动本地项目，并为后续多任务扩展保留配置结构。",
+  "tasks": [
+    {
+      "id": "job-visualizer",
+      "name": "Job Visualizer 看板",
+      "projectName": "job-visualizer",
+      "description": "日本前端岗位可视化项目",
+      "workingDirectory": "..",
+      "command": "npm run dev",
+      "openUrl": "http://127.0.0.1:3000",
+      "healthUrl": "http://127.0.0.1:3000/api/dashboard",
+      "port": 3000,
+      "logDirectory": "../tmp/launcher",
+      "tags": ["Node.js", "Dashboard", "MongoDB"]
+    }
+  ]
+}

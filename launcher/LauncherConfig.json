@@ -1,0 +1,29 @@
+{
+  "launcherName": "Workspace Launch Deck",
+  "description": "One-click local and Docker launch control for the current project, with room to grow into a multi-task launcher.",
+  "tasks": [
+    {
+      "id": "job-visualizer",
+      "name": "Job Visualizer Dashboard",
+      "projectName": "job-visualizer",
+      "description": "Launch the dashboard either with the local Node process or through Docker Compose.",
+      "workingDirectory": "..",
+      "command": "npm run dev",
+      "openUrl": "http://127.0.0.1:3000",
+      "healthUrl": "http://127.0.0.1:3000/api/dashboard",
+      "port": 3000,
+      "logDirectory": "../tmp/launcher",
+      "tags": ["Node.js", "Dashboard", "MongoDB", "Docker"],
+      "docker": {
+        "enabled": true,
+        "serviceName": "app",
+        "upCommand": "docker compose up --build -d",
+        "downCommand": "docker compose down",
+        "logsCommand": "docker compose logs -f app",
+        "packCommand": "npm run docker:pack",
+        "packOutputPath": "../job-visualizer-images.tar",
+        "openUrl": ""
+      }
+    }
+  ]
+}

@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>工程岗位看板</title>
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+
+<body>
+  <div class="page-shell">
+    <header class="hero">
+      <div class="hero-copy-wrap">
+        <p class="eyebrow">JPHR Dashboard</p>
+        <h1>工程岗位可视化看板</h1>
+        <p class="hero-copy">
+          自动累加新岗位，重复岗位自动更新，未再次出现的旧岗位会从当前看板移除。现在支持前端、后端、测试岗位的统一展示，并可按岗位方向、地点、首次招聘时间、薪资、语言要求、技术栈和远程友好程度快速筛选与排序。
+        </p>
+      </div>
+      <div class="hero-actions">
+        <button class="ghost-btn" id="crawlAllButton">自动抓取全站</button>
+        <button class="ghost-btn" id="syncLatestButton">同步最新抓取</button>
+        <button class="ghost-btn" id="refreshButton">刷新数据</button>
+      </div>
+    </header>
+
+    <section class="toolbar-card">
+      <div class="toolbar-head">
+        <div>
+          <h2>筛选与排序</h2>
+        </div>
+        <div class="toolbar-actions">
+          <button class="toolbar-toggle" id="toggleFiltersButton" aria-expanded="true">收起筛选</button>
+          <button class="toolbar-reset" id="resetFiltersButton">重置筛选</button>
+        </div>
+      </div>
+
+      <div class="toolbar-summary-row">
+        <div class="result-summary" id="resultSummary">正在加载筛选结果...</div>
+      </div>
+
+      <div class="toolbar-content" id="toolbarContent">
+        <div class="filters-grid">
+          <label class="field">
+            <span class="field-label">搜索</span>
+            <input id="searchInput" class="field-control" type="search" placeholder="岗位名、公司、技术栈" />
+          </label>
+
+          <label class="field">
+            <span class="field-label">地点</span>
+            <select id="locationFilter" class="field-control"></select>
+          </label>
+
+          <label class="field">
+            <span class="field-label">岗位方向</span>
+            <select id="roleFamilyFilter" class="field-control"></select>
+          </label>
+
+          <label class="field">
+            <span class="field-label">来源网站</span>
+            <select id="sourceFilter" class="field-control"></select>
+          </label>
+
+          <label class="field">
+            <span class="field-label">远程友好</span>
+            <select id="remoteFilter" class="field-control">
+              <option value="all">全部</option>
+              <option value="remote">仅远程友好</option>
+              <option value="onsite">仅非远程</option>
+            </select>
+          </label>
+
+          <label class="field">
+            <span class="field-label">日语要求</span>
+            <select id="japaneseFilter" class="field-control"></select>
+          </label>
+
+          <label class="field">
+            <span class="field-label">英语要求</span>
+            <select id="englishFilter" class="field-control"></select>
+          </label>
+
+          <label class="field">
+            <span class="field-label">排序</span>
+            <select id="sortSelect" class="field-control">
+              <option value="match">综合匹配分</option>
+              <option value="latest">核验时间最新</option>
+              <option value="firstPosted">首次招聘时间最新</option>
+              <option value="salaryDesc">薪资从高到低</option>
+              <option value="salaryAsc">薪资从低到高</option>
+              <option value="company">公司名 A-Z</option>
+            </select>
+          </label>
+        </div>
+
+        <div class="toolbar-subrow">
+          <label class="checkbox-pill">
+            <input id="salaryOnlyFilter" type="checkbox" />
+            <span>仅看有薪资岗位</span>
+          </label>
+        </div>
+
+        <div class="stack-filter-wrap">
+          <div class="stack-filter-head">
+            <span class="field-label">技术栈</span>
+          </div>
+          <div class="stack-filter-list" id="stackFilterList"></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="stats-grid" id="statsGrid"></section>
+
+    <section class="tabs-card">
+      <div class="section-head">
+        <div>
+          <p class="toolbar-eyebrow">岗位列表</p>
+          <h2 id="listSectionTitle">当前岗位列表</h2>
+        </div>
+        <div class="list-tabs" id="listTabs">
+          <button class="list-tab is-active" data-tab="active" type="button">当前岗位</button>
+          <button class="list-tab" data-tab="favorite" type="button">收藏岗位</button>
+          <button class="list-tab" data-tab="closed" type="button">职位已关闭</button>
+        </div>
+      </div>
+      <div class="job-grid" id="jobsList"></div>
+    </section>
+  </div>
+
+  <div class="toast-viewport" id="toastViewport" aria-live="polite" aria-atomic="true"></div>
+
+  <div class="modal-backdrop" id="manualCloseModal" hidden>
+    <section class="modal-card" id="manualCloseDialog" role="dialog" aria-modal="true"
+      aria-labelledby="manualCloseTitle">
+      <div class="modal-head">
+        <h3 id="manualCloseTitle">手动标记岗位失效</h3>
+        <p class="modal-copy">选择一个关闭原因，系统会自动记录判定规则并在后续抓取中继续校验。</p>
+      </div>
+      <form class="modal-form" id="manualCloseForm">
+        <div class="modal-actions-grid">
+          <label class="modal-option modal-option--danger">
+            <input class="modal-radio" type="radio" name="manualCloseReason" value="已关闭" checked />
+            <span class="modal-option-label">已关闭</span>
+          </label>
+          <label class="modal-option modal-option--warning">
+            <input class="modal-radio" type="radio" name="manualCloseReason" value="已填补" />
+            <span class="modal-option-label">已填补</span>
+          </label>
+          <label class="modal-option">
+            <input class="modal-radio" type="radio" name="manualCloseReason" value="不再空缺" />
+            <span class="modal-option-label">不再空缺</span>
+          </label>
+        </div>
+        <div class="modal-footer">
+          <button class="ghost-btn" id="manualCloseConfirmButton" type="submit">确认失效</button>
+          <button class="toolbar-toggle" id="manualCloseCancelButton" type="button">取消</button>
+        </div>
+      </form>
+    </section>
+  </div>
+
+  <template id="jobCardTemplate">
+    <article class="job-card">
+      <div class="job-card__top">
+        <div>
+          <p class="job-company"></p>
+          <h3 class="job-title"></h3>
+        </div>
+        <div class="job-badges">
+          <span class="job-favorite-badge" aria-label="已收藏" title="已收藏">★</span>
+          <span class="job-status-badge"></span>
+          <span class="job-family-badge"></span>
+        </div>
+      </div>
+      <div class="job-meta"></div>
+      <div class="job-stack-list"></div>
+      <div class="job-highlights"></div>
+      <p class="job-summary"></p>
+      <section class="job-benefits" hidden>
+        <p class="job-section-label">公司福利</p>
+        <div class="job-benefit-list"></div>
+      </section>
+      <dl class="job-details"></dl>
+      <div class="job-footer">
+        <div class="job-footer-group job-footer-group--links">
+          <a class="job-link" target="_blank" rel="noreferrer">查看职位</a>
+          <a class="job-source-link" target="_blank" rel="noreferrer">查看来源</a>
+        </div>
+        <div class="job-footer-group job-footer-group--actions">
+          <button class="job-action-btn job-action-btn--danger" data-action="manual-close" type="button">手动失效</button>
+          <button class="job-action-btn job-action-btn--restore" data-action="reopen" type="button">取消关闭</button>
+          <button class="job-action-btn" data-action="favorite" type="button"></button>
+        </div>
+      </div>
+    </article>
+  </template>
+
+  <script src="/app.js" defer></script>
+</body>
+
+</html>

@@ -1,0 +1,8 @@
+node_modules/
+tmp/
+.env
+launcher/runtime/
+launcher/*.TMP
+launcher/tmp-test.exe
+*.tar
+
